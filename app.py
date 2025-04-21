@@ -4,7 +4,7 @@ from summarizer import summarize_url
 st.set_page_config(page_title="AI News Summarizer", layout="centered")
 
 st.title("📰 AI News Summarizer")
-st.markdown("Paste any news homepage URL, or click one of the quick sources below to get a summary powered by GPT-4o.")
+st.markdown("Paste any news homepage URL, or click one of the quick sources below to get a summary powered by GPT-4o or GPT-3.5-turbo.")
 
 # --- Quick Sources ---
 default_sources = {
@@ -17,7 +17,7 @@ default_sources = {
         "NBC News": "https://www.nbcnews.com",
         "CBS News": "https://www.cbsnews.com",
         "Fox News": "https://www.foxnews.com",
-        "Reuters": "https://www.reuters.com",
+        "NBA News": "https://www.nba.com/news",
         "Bloomberg": "https://www.bloomberg.com"
     },
     "Australia": {
@@ -25,15 +25,15 @@ default_sources = {
         "SMH": "https://www.smh.com.au",
         "The Guardian AU": "https://www.theguardian.com/au",
         "The Age": "https://www.theage.com.au",
-        "News.com.au": "https://www.news.com.au",
+        "The Conversation": "https://theconversation.com/au",
         "7News": "https://7news.com.au",
         "SBS News": "https://www.sbs.com.au/news",
-        "The Australian": "https://www.theaustralian.com.au",
-        "The West Australian": "https://thewest.com.au",
+        "Sky News Australia": "https://www.skynews.com.au/",
+        "9News": "https://www.9news.com.au/melbourne",
         "Crikey": "https://www.crikey.com.au"
     },
     "Taiwan": {
-        "UDN 聯合報": "https://udn.com",
+        "UDN 聯合報": "https://udn.com/news/breaknews/1",
         "CNA 中央社": "https://www.cna.com.tw",
         "Liberty Times 自由時報": "https://news.ltn.com.tw",
         "Apple News 蘋果新聞網": "https://tw.nextapple.com",
@@ -41,15 +41,15 @@ default_sources = {
         "SETN 三立新聞網": "https://www.setn.com",
         "ETtoday": "https://www.ettoday.net",
         "NOWnews 今日新聞": "https://www.nownews.com",
-        "China Times 中時": "https://www.chinatimes.com",
+        "Initium Media 端傳媒": "https://theinitium.com/zh-hans/latest",
         "Storm Media 風傳媒": "https://www.storm.mg"
     },
     "China": {
         "Xinhua 新華網": "https://www.news.cn",
         "People's Daily 人民網": "http://www.people.com.cn",
-        "Global Times 環球時報": "https://www.globaltimes.cn",
-        "The Paper 澎湃新聞": "https://www.thepaper.cn",
-        "CCTV News": "https://news.cctv.com",
+        "Huanqiu 環球網": "https://www.huanqiu.com/",
+        "The Paper 澎湃新聞": "https://m.thepaper.cn/",
+        "CCTV News 央視新聞": "https://news.cctv.com",
         "China Daily": "https://www.chinadaily.com.cn",
         "Sina News": "https://news.sina.com.cn",
         "Tencent News": "https://www.qq.com/",
