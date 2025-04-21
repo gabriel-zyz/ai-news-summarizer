@@ -52,7 +52,7 @@ default_sources = {
         "CCTV News": "https://news.cctv.com",
         "China Daily": "https://www.chinadaily.com.cn",
         "Sina News": "https://news.sina.com.cn",
-        "Tencent News": "https://xw.qq.com",
+        "Tencent News": "https://www.qq.com/",
         "Phoenix News": "https://news.ifeng.com",
         "Netease News": "https://news.163.com"
     }
