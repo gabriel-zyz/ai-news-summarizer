@@ -62,7 +62,7 @@ default_sources = {
 st.markdown("### 🔗 Quick Sources by Region")
 
 for region, sources in default_sources.items():
-    with st.expander(region, expanded=(region == "US")):
+    with st.expander(region):
         cols = st.columns(2)
         buttons = list(sources.items())
         half = len(buttons) // 2 + len(buttons) % 2
