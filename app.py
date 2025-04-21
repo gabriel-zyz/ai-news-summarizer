@@ -76,11 +76,18 @@ st.markdown("### 🔍 Or enter a custom homepage URL")
 url = st.text_input("News homepage URL", value=st.session_state.get("url", ""), key="url_input")
 
 # --- Summarize ---
+st.markdown("### ⚙️ Model Selection")
+model_choice = st.selectbox(
+    "Choose the model for summarization:",
+    options=["gpt-3.5-turbo", "gpt-4o"],
+    index=1  # default to gpt-4o
+)
+
 if st.button("Summarize This Page"):
     if not url:
         st.warning("Please enter or select a URL first.")
     else:
         with st.spinner("Fetching and summarizing homepage..."):
-            summary = summarize_url(url)
+            summary = summarize_url(url, model=model_choice)
         st.markdown("### ✅ Summary")
         st.markdown(summary)

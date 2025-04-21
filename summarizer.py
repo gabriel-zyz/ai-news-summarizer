@@ -13,7 +13,7 @@ HEADERS = {
 
 SYSTEM_PROMPT = "You are a helpful assistant that summarizes homepage content from news websites. Your goal is to present the major headlines and themes in clear, bullet-pointed markdown."
 
-def summarize_url(url: str) -> str:
+def summarize_url(url: str, model: str = "gpt-4o") -> str:
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         response.raise_for_status()
@@ -40,7 +40,7 @@ Please summarize the **key stories, themes, and highlights** as a list in Markdo
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
