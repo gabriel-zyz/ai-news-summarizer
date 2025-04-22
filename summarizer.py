@@ -13,7 +13,7 @@ HEADERS = {
 
 SYSTEM_PROMPT = "You are a helpful assistant that summarizes homepage content from news websites. Your goal is to present the major headlines and themes in clear, bullet-pointed markdown."
 
-def summarize_url(url: str, model: str = "gpt-4o") -> str:
+def summarize_url(url: str, model: str = "gpt-4.1-nano") -> str:
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         response.raise_for_status()

@@ -79,8 +79,8 @@ url = st.text_input("News homepage URL", value=st.session_state.get("url", ""), 
 st.markdown("### ⚙️ Model Selection")
 model_choice = st.selectbox(
     "Choose the model for summarization:",
-    options=["gpt-3.5-turbo", "gpt-4o"],
-    index=1  # default to gpt-4o
+    options=["gpt-3.5-turbo", "gpt-4.1-nano"],
+    index=1
 )
 
 if st.button("Summarize This Page"):
