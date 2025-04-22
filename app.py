@@ -4,7 +4,7 @@ from summarizer import summarize_url
 st.set_page_config(page_title="AI News Summarizer", layout="centered")
 
 st.title("📰 AI News Summarizer")
-st.markdown("Paste any news homepage URL, or click one of the quick sources below to get a summary powered by GPT-4o or GPT-3.5-turbo.")
+st.markdown("Paste any news homepage URL, or click one of the quick sources below to get a summary powered by GPT-4.1-nano or GPT-3.5-turbo.")
 
 # --- Quick Sources ---
 default_sources = {
