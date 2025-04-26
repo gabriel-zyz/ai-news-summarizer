@@ -32,7 +32,7 @@ def summarize_url(url: str, model: str = "gpt-4.1-nano") -> str:
 
     prompt = f"""You are reading the homepage of a news website. The content below contains headlines, subheadings, and key blurbs from that homepage.
 
-Please summarize the **key stories, themes, and highlights** as a list in Markdown format and in source language. Group related items if possible.
+Please summarize the **key stories, themes, and highlights** as a list in Markdown format and in source language(if the most of content is in English then summarize in English. If in Chinese, summarize in Chinese. There will not be any other languages. It should either Chinese or English). Group related items if possible.
 
 ---
 {limited_text}
