@@ -18,7 +18,7 @@ default_sources = {
         "CBS News": "https://www.cbsnews.com",
         "Fox News": "https://www.foxnews.com",
         "NBA News": "https://www.nba.com/news",
-        "Bloomberg": "https://www.bloomberg.com"
+        "TechCrunch": "https://techcrunch.com"
     },
     "Australia": {
         "ABC News AU": "https://www.abc.net.au/news",
