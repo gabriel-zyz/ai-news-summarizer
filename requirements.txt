@@ -70,4 +70,4 @@ langchain-openai==0.1.7
 langchain-core==0.1.52
 langchain-community==0.0.38
 chromadb==0.4.24
-tiktoken==0.6.0
+tiktoken==0.7.0
