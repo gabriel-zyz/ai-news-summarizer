@@ -30,7 +30,7 @@ MarkupSafe==3.0.2
 narwhals==1.35.0
 newspaper3k==0.2.8
 nltk==3.9.1
-numpy==2.2.5
+numpy==1.26.4
 openai==1.75.0
 packaging==24.2
 pandas==2.2.3
