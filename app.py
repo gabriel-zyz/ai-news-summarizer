@@ -5,7 +5,7 @@ st.set_page_config(page_title="AI News Summarizer", layout="centered")
 st.title("📰 AI News Summarizer")
 
 st.markdown("Paste any news homepage URL or click one of the sources below to get a summary powered by GPT-4.1-nano.")
-st.markdown("<div style='color: gray; font-size: 0.9em;'>💬 <b>New(11 May 2025):</b> You can now ask questions about the summary below using the built-in chatbot!</div>", unsafe_allow_html=True)
+st.markdown("<div style='color: gray; font-size: 0.9em;'>💬 <b>New(28 May 2025):</b> You can now ask questions about the summary below using the built-in chatbot and click on embedded links to read the original articles!</div>", unsafe_allow_html=True)
 
 # Default sources
 default_sources = {

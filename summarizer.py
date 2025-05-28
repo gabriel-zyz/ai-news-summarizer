@@ -9,6 +9,8 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 import os
 from dotenv import load_dotenv
+import re
+from urllib.parse import urljoin
 
 load_dotenv()
 client = OpenAI()
@@ -17,7 +19,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
 }
 
-SYSTEM_PROMPT = "You are a helpful assistant that summarizes homepage content from news websites."
+SYSTEM_PROMPT = "You are a helpful assistant that summarizes homepage content from news websites. For each news item, include a clickable link icon or embed the URL in the text without displaying the full URL."
 
 def summarize_url(url: str) -> str:
     try:
@@ -28,6 +30,33 @@ def summarize_url(url: str) -> str:
 
     try:
         soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract headlines and their URLs before removing tags
+        news_links = []
+        for a_tag in soup.find_all('a'):
+            # Skip empty links or those without text
+            if not a_tag.get_text(strip=True) or not a_tag.get('href'):
+                continue
+                
+            # Get the text and href
+            text = a_tag.get_text(strip=True)
+            href = a_tag.get('href')
+            
+            # Skip very short text or navigation links
+            if len(text) < 20 or re.search(r'(login|sign in|subscribe|contact|about|menu)', text.lower()):
+                continue
+                
+            # Convert relative URLs to absolute
+            if not href.startswith(('http://', 'https://')):
+                href = urljoin(url, href)
+                
+            # Add to our collection
+            news_links.append({'text': text, 'url': href})
+        
+        # Limit to top 30 links to avoid overwhelming
+        news_links = news_links[:30]
+        
+        # Now proceed with the regular text extraction
         for tag in soup(["script", "style", "nav", "footer", "noscript", "form", "img"]):
             tag.decompose()
         text = soup.get_text(separator="\n", strip=True)
@@ -36,13 +65,28 @@ def summarize_url(url: str) -> str:
     except Exception as e:
         return f"❌ Failed to extract text: {e}"
 
+    # Prepare the news links data
+    news_links_text = ""
+    if news_links:
+        news_links_text = "\n\nHere are some of the headlines with their URLs:\n"
+        for i, item in enumerate(news_links):
+            news_links_text += f"\n{i+1}. {item['text']} - {item['url']}"
+    
     prompt = f"""
 You are reading the homepage of a news website. The content below contains headlines, subheadings, and key blurbs from that homepage.
 
 Please summarize the **key stories, themes, and highlights** as a list in Markdown format and in source language(if the most of content is in English then summarize in English. If in Chinese, summarize in Chinese. There will not be any other languages. It should either Chinese or English). Group related items if possible.
 
+IMPORTANT: For each news item, include a clickable link to the article where available. You can either:
+1. Add a link icon like [🔗](URL) after the news item
+2. Or embed the URL in part of the text like [read more](URL)
+3. DO NOT display the full URL in the text
+
+If you cannot find a matching URL for a news item, it's okay to leave it without a link.
+
 ---
 {limited_text}
+{news_links_text}
 """
 
     try:
