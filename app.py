@@ -1,11 +1,15 @@
 import streamlit as st
-from summarizer import summarize_url, build_conversational_chain
+from summarizer import summarize_url, build_conversational_chain, translate_text
 
 st.set_page_config(page_title="AI News Summarizer", layout="centered")
 st.title("📰 AI News Summarizer")
 
-st.markdown("Paste any news homepage URL or click one of the sources below to get a summary powered by GPT-4.1-nano.")
-st.markdown("<div style='color: gray; font-size: 0.9em;'>💬 <b>New(28 May 2025):</b> You can now ask questions about the summary below using the built-in chatbot and click on embedded links to read the original articles!</div>", unsafe_allow_html=True)
+# Model selection dropdown
+model_options = ["gpt-4.1-nano", "gpt-4.1-mini"]
+selected_model = st.selectbox("Select AI model:", model_options, index=0)
+
+st.markdown(f"Paste any news homepage URL or click one of the sources below to get a summary powered by {selected_model}.")
+st.markdown("<div style='color: gray; font-size: 0.9em;'>💬 <b>New(29 May 2025):</b> You can now translate summaries between English and Chinese with a single click and choose between gpt-4.1-nano or gpt-4.1-mini models!</div>", unsafe_allow_html=True)
 
 # Default sources
 default_sources = {
@@ -74,16 +78,64 @@ if st.button("Summarize This Page"):
         st.warning("Please enter or select a URL first.")
     else:
         with st.spinner("Fetching and summarizing..."):
-            summary = summarize_url(url)
-            st.session_state["summary"] = summary
-            st.session_state["chat_chain"] = build_conversational_chain(summary)
+            summary_dict = summarize_url(url, model=selected_model)
+            st.session_state["summary_dict"] = summary_dict
+            st.session_state["original_language"] = summary_dict["language"]
+            st.session_state["current_language"] = summary_dict["language"]
+            st.session_state["chat_chain"] = build_conversational_chain(summary_dict, model=selected_model)
             st.session_state["chat_history"] = [] 
 
 
 # === Chat about the summary ===
-if "summary" in st.session_state:
+if "summary_dict" in st.session_state:
     st.markdown("### ✅ Summary")
-    st.markdown(st.session_state.summary)
+    
+    # Add translation button
+    col1, col2 = st.columns([5, 1])
+    with col2:
+        original_lang = st.session_state["original_language"]
+        current_lang = st.session_state["current_language"]
+        target_lang = "en" if current_lang == "zh" else "zh"
+        button_text = "Translate to English" if target_lang == "en" else "Translate to Chinese"
+        
+        if st.button("🔄 Translate", key="translate_button"):
+            with st.spinner("Translating..."):
+                # Determine which language to translate to
+                new_target_lang = "en" if current_lang == "zh" else "zh"
+                
+                # Check if we already have this translation
+                translation_key = f"{new_target_lang}_content"
+                if translation_key in st.session_state["summary_dict"]:
+                    # Use cached translation
+                    st.session_state["current_language"] = new_target_lang
+                else:
+                    # Generate new translation
+                    translated_content = translate_text(
+                        st.session_state["summary_dict"]["content"],
+                        new_target_lang,
+                        model=selected_model
+                    )
+                    # Store translation
+                    st.session_state["summary_dict"][translation_key] = translated_content
+                    st.session_state["current_language"] = new_target_lang
+                
+                # Force rerun to update UI
+                st.rerun()
+    
+    # Display summary in current language
+    current_lang = st.session_state["current_language"]
+    original_lang = st.session_state["original_language"]
+    
+    if current_lang == original_lang:
+        summary_content = st.session_state["summary_dict"]["content"]
+    elif current_lang == "en" and "en_content" in st.session_state["summary_dict"]:
+        summary_content = st.session_state["summary_dict"]["en_content"]
+    elif current_lang == "zh" and "zh_content" in st.session_state["summary_dict"]:
+        summary_content = st.session_state["summary_dict"]["zh_content"]
+    else:
+        summary_content = st.session_state["summary_dict"]["content"]
+    
+    st.markdown(summary_content)
 
     st.markdown("---")
     st.markdown("### 💬 Ask a question about this summary")

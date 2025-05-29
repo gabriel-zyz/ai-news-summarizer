@@ -11,6 +11,7 @@ import os
 from dotenv import load_dotenv
 import re
 from urllib.parse import urljoin
+import json
 
 load_dotenv()
 client = OpenAI()
@@ -21,12 +22,46 @@ HEADERS = {
 
 SYSTEM_PROMPT = "You are a helpful assistant that summarizes homepage content from news websites. For each news item, include a clickable link icon or embed the URL in the text without displaying the full URL."
 
-def summarize_url(url: str) -> str:
+def translate_text(text: str, target_language: str, model: str = "gpt-4.1-nano") -> str:
+    """Translate text between English and Chinese"""
+    if not text or text.startswith("❌"):
+        return text
+        
+    source_language = "Chinese" if any('\u4e00' <= char <= '\u9fff' for char in text) else "English"
+    target_language_name = "Chinese" if target_language == "zh" else "English"
+    
+    if source_language == target_language_name:
+        return text
+        
+    try:
+        prompt = f"""Translate the following text from {source_language} to {target_language_name}. 
+        Maintain the same markdown formatting, links, and structure in the translation.
+        
+        Text to translate:
+        {text}
+        """
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a professional translator between English and Chinese."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"❌ Translation Error: {e}"
+
+def summarize_url(url: str, model: str = "gpt-4.1-nano") -> dict:
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         response.raise_for_status()
     except Exception as e:
-        return f"❌ Failed to fetch the page: {e}"
+        return {
+            "content": f"❌ Failed to fetch the page: {e}",
+            "language": "en"
+        }
 
     try:
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -63,7 +98,10 @@ def summarize_url(url: str) -> str:
         lines = list(set(line.strip() for line in text.splitlines() if len(line.strip()) > 30))
         limited_text = "\n".join(lines[:80])
     except Exception as e:
-        return f"❌ Failed to extract text: {e}"
+        return {
+            "content": f"❌ Failed to extract text: {e}",
+            "language": "en"
+        }
 
     # Prepare the news links data
     news_links_text = ""
@@ -91,18 +129,29 @@ If you cannot find a matching URL for a news item, it's okay to leave it without
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model=model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.4
         )
-        return response.choices[0].message.content
+        summary_content = response.choices[0].message.content
+        # Detect language - simple check for Chinese characters
+        is_chinese = any('\u4e00' <= char <= '\u9fff' for char in summary_content)
+        language = 'zh' if is_chinese else 'en'
+        return {
+            "content": summary_content,
+            "language": language
+        }
     except Exception as e:
-        return f"❌ GPT Error: {e}"
+        return {
+            "content": f"❌ GPT Error: {e}",
+            "language": "en"
+        }
 
-def build_conversational_chain(summary_text: str):
+def build_conversational_chain(summary_dict: dict, model: str = "gpt-4.1-nano"):
+    summary_text = summary_dict["content"]
     text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     doc = Document(page_content=summary_text)
     chunks = text_splitter.split_documents([doc])
@@ -112,6 +161,6 @@ def build_conversational_chain(summary_text: str):
     retriever = vectorstore.as_retriever()
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    llm = ChatOpenAI(model_name="gpt-4.1-nano", temperature=0.5)
+    llm = ChatOpenAI(model_name=model, temperature=0.5)
     chain = ConversationalRetrievalChain.from_llm(llm, retriever=retriever, memory=memory)
     return chain
