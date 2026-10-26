@@ -1,4 +1,8 @@
 .env
 __pycache__/
 venv/
+.venv/
 .DS_Store
+.pytest_cache/
+.ruff_cache/
+*.jsonl

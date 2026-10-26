@@ -1,0 +1,122 @@
+# MVP sources: 4 regions x 4 outlets, Chinese and English only.
+# kind: rss (one or more feeds) | xinhua | people | cctv | udn (custom parsers in ingest/listings.py)
+# Feeds tested 2026-10-25/26. news.com.au blocks crawlers; 7News (Seven West Media) replaces it.
+# The Age was rejected: same owner as SMH (Nine) and largely the same articles.
+
+- id: abc-au
+  name: ABC News
+  region: AU
+  language: en
+  kind: rss
+  feeds: [https://www.abc.net.au/news/feed/51120/rss.xml]
+
+- id: guardian-au
+  name: The Guardian Australia
+  region: AU
+  language: en
+  kind: rss
+  feeds: [https://www.theguardian.com/australia-news/rss]
+
+- id: smh
+  name: Sydney Morning Herald
+  region: AU
+  language: en
+  kind: rss
+  feeds: [https://www.smh.com.au/rss/feed.xml]
+
+- id: 7news
+  name: 7News
+  region: AU
+  language: en
+  kind: rss
+  feeds: [https://7news.com.au/feed]
+
+- id: npr
+  name: NPR
+  region: US
+  language: en
+  kind: rss
+  feeds: [https://feeds.npr.org/1001/rss.xml]
+
+- id: cbs
+  name: CBS News
+  region: US
+  language: en
+  kind: rss
+  feeds: [https://www.cbsnews.com/latest/rss/main]
+
+- id: nbc
+  name: NBC News
+  region: US
+  language: en
+  kind: rss
+  feeds: [https://feeds.nbcnews.com/nbcnews/public/news]
+
+- id: fox
+  name: Fox News
+  region: US
+  language: en
+  kind: rss
+  feeds: [https://moxie.foxnews.com/google-publisher/latest.xml]
+
+- id: xinhua
+  name: 新华网 Xinhua
+  region: CN
+  language: zh
+  kind: xinhua
+  feeds: [https://www.news.cn/]
+
+- id: people
+  name: 人民网 People's Daily
+  region: CN
+  language: zh
+  kind: people
+  feeds: [http://www.people.com.cn/]
+
+- id: cctv
+  name: 央视新闻 CCTV
+  region: CN
+  language: zh
+  kind: cctv
+  feeds: [https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp]
+
+- id: chinanews
+  name: 中新网 Chinanews
+  region: CN
+  language: zh
+  kind: rss
+  feeds: [https://www.chinanews.com.cn/rss/scroll-news.xml]
+
+- id: cna
+  name: 中央社 CNA
+  region: TW
+  language: zh
+  kind: rss
+  feeds:
+    - https://feeds.feedburner.com/rsscna/politics
+    - https://feeds.feedburner.com/rsscna/mainland
+    - https://feeds.feedburner.com/rsscna/intworld
+
+- id: ltn
+  name: 自由時報 Liberty Times
+  region: TW
+  language: zh
+  kind: rss
+  feeds: [https://news.ltn.com.tw/rss/all.xml]
+
+- id: udn
+  name: 聯合報 UDN
+  region: TW
+  language: zh
+  kind: udn
+  # RSS feeds return empty items since 2026-10; use the breaking-news JSON list (2 pages).
+  feeds:
+    - "https://udn.com/api/more?page=1&id=&channelId=1&cate_id=0&type=breaknews&totalRecNo=0"
+    - "https://udn.com/api/more?page=2&id=&channelId=1&cate_id=0&type=breaknews&totalRecNo=0"
+
+- id: ettoday
+  name: ETtoday
+  region: TW
+  language: zh
+  kind: rss
+  feeds: [https://feeds.feedburner.com/ettoday/news]
