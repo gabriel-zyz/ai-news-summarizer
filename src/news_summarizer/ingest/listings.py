@@ -17,7 +17,11 @@ _TRACKING_PARAMS = re.compile(r"^(utm_|fbclid$|gclid$|cmpid$|ocid$|ref$|ftag$|it
 
 def canonical_url(url: str) -> str:
     """Drop tracking params and the fragment so the same article dedupes across feeds."""
-    parts = urlsplit(url.strip())
+    url = url.strip()
+    # Chinanews sometimes emits the host twice: "https://a.cnhttps://a.cn/path". Keep the last URL.
+    url = url[url.rfind("http://") if url.rfind("http://") > 0 else 0 :]
+    url = url[url.rfind("https://") if url.rfind("https://") > 0 else 0 :]
+    parts = urlsplit(url)
     query = [(k, v) for k, v in parse_qsl(parts.query) if not _TRACKING_PARAMS.match(k)]
     return urlunsplit((parts.scheme, parts.netloc.lower(), parts.path, urlencode(query), ""))
 

@@ -21,6 +21,11 @@ def test_canonical_url_drops_tracking_and_fragment():
     assert canonical_url(url) == "https://www.abc.net.au/news/story?id=7"
 
 
+def test_canonical_url_repairs_doubled_host():
+    url = "https://www.chinanews.com.cnhttps://www.chinanews.com.cn/tp/hd2011/2026/10-28/1.shtml"
+    assert canonical_url(url) == "https://www.chinanews.com.cn/tp/hd2011/2026/10-28/1.shtml"
+
+
 def test_rss_treats_1970_dates_as_unknown():
     body = b"""<?xml version="1.0"?><rss version="2.0"><channel>
       <item><title>A</title><link>https://x.test/a?utm_medium=rss</link>
