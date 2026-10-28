@@ -7,7 +7,7 @@ import psycopg
 import pytest
 
 from news_summarizer import db
-from news_summarizer.ingest.models import Article, load_sources
+from news_summarizer.ingest.models import Article, ListingItem, load_sources
 
 URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL not set")
@@ -22,7 +22,7 @@ def conn():
 
 
 def test_migrate_is_idempotent(conn):
-    assert db.migrate(conn) == ["0001_init.sql"]
+    assert db.migrate(conn) == ["0001_init.sql", "0002_frontpages.sql"]
     assert db.migrate(conn) == []
 
 
@@ -66,3 +66,19 @@ def test_sync_sources_deactivates_removed(conn):
     db.sync_sources(conn, sources[1:])
     inactive = conn.execute("SELECT id FROM sources WHERE NOT active").fetchall()
     assert inactive == [(sources[0].id,)]
+
+
+def test_frontpage_snapshot_keeps_rank_order(conn):
+    db.migrate(conn)
+    db.sync_sources(conn, load_sources())
+    run_id = db.start_run(conn)
+    db.insert_frontpage(conn, run_id, "abc-au", [
+        ListingItem("abc-au", "https://abc.test/lead", "Lead"),
+        ListingItem("abc-au", "https://abc.test/second", "Second"),
+    ])
+    db.insert_frontpage(conn, run_id, "abc-au", [])
+    rows = conn.execute(
+        "SELECT rank, title FROM frontpage_items ORDER BY rank"
+    ).fetchall()
+    assert rows == [(1, "Lead"), (2, "Second")]
+    assert conn.execute("SELECT count(*) FROM frontpage_snapshots").fetchone()[0] == 1

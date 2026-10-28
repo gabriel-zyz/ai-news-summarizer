@@ -47,6 +47,8 @@ def cmd_ingest(args) -> None:
         try:
             results = pipeline.run(sources, is_known=lambda urls: db.known_urls(conn, urls), **opts)
             inserted = sum(db.insert_articles(conn, r.articles, run_id) for r in results)
+            for r in results:
+                db.insert_frontpage(conn, run_id, r.source_id, r.frontpage)
         except Exception as exc:
             db.finish_run(conn, run_id, "failed", {"error": repr(exc)})
             raise
@@ -64,10 +66,11 @@ def cmd_ingest(args) -> None:
 
 
 def _report(results) -> None:
-    print(f"{'source':<12} {'listed':>6} {'new':>4} {'text':>4}  errors")
+    print(f"{'source':<12} {'front':>5} {'listed':>6} {'new':>4} {'text':>4}  errors")
     for r in results:
         s = r.stats()
-        print(f"{r.source_id:<12} {s['listed']:>6} {s['new']:>4} {s['extracted']:>4}  "
+        print(f"{r.source_id:<12} {s['frontpage']:>5} {s['listed']:>6} {s['new']:>4} "
+              f"{s['extracted']:>4}  "
               f"{len(r.errors)}{'  ' + r.errors[0][:80] if r.errors else ''}")
 
 

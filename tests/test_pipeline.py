@@ -14,6 +14,13 @@ def test_sources_cover_four_regions_with_four_outlets_each():
         assert sum(s.region == region for s in sources) == 4
 
 
+def test_every_source_has_a_front_page_and_titles_are_cleaned():
+    sources = {s.id: s for s in load_sources()}
+    assert all(s.frontpage for s in sources.values())
+    assert sources["cna"].clean_title("標題 | 政治 | 中央社 CNA") == "標題"
+    assert sources["npr"].clean_title("A | B") == "A | B"
+
+
 def test_fresh_drops_old_but_keeps_undated():
     now = datetime(2026, 10, 26, 12, tzinfo=UTC)
     items = [

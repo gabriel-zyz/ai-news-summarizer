@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from . import http
 from .extract import extract
-from .listings import PARSERS
+from .listings import PARSERS, parse_frontpage
 from .models import Article, ListingItem, Source
 
 log = logging.getLogger(__name__)
@@ -33,11 +33,13 @@ class SourceResult:
     listed: int = 0
     new: int = 0
     articles: list[Article] = field(default_factory=list)
+    # Today's headlines in homepage order; empty when the front page could not be read.
+    frontpage: list[ListingItem] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
-        return self.listed > 0 and not (self.new and not self.articles)
+        return (self.listed > 0 or bool(self.frontpage)) and not (self.new and not self.articles)
 
     def stats(self) -> dict:
         extracted = sum(1 for a in self.articles if a.extra.get("extraction") == "ok")
@@ -45,6 +47,7 @@ class SourceResult:
             "listed": self.listed,
             "new": self.new,
             "extracted": extracted,
+            "frontpage": len(self.frontpage),
             "errors": self.errors[:5],
         }
 
@@ -57,6 +60,13 @@ def list_source(client, source: Source) -> list[ListingItem]:
         for item in parse(source.id, resp.content, str(resp.url)):
             seen.setdefault(item.url, item)
     return list(seen.values())
+
+
+def list_frontpage(client, source: Source) -> list[ListingItem]:
+    if source.frontpage is None:
+        return []
+    resp = http.get(client, source.frontpage.url)
+    return parse_frontpage(source.id, resp.content, str(resp.url), source.frontpage.pattern)
 
 
 def fresh(items: list[ListingItem], max_age: timedelta, now: datetime) -> list[ListingItem]:
@@ -75,14 +85,25 @@ def ingest_source(
 ) -> SourceResult:
     result = SourceResult(source.id)
     try:
+        result.frontpage = list_frontpage(client, source)
+    except Exception as exc:  # noqa: BLE001 — the feed can still be ingested
+        result.errors.append(f"frontpage: {exc!r}")
+        log.warning("%s: front page failed: %r", source.id, exc)
+    try:
         items = fresh(list_source(client, source), max_age, datetime.now(UTC))
     except Exception as exc:  # noqa: BLE001 — one broken source must not stop the run
         result.errors.append(f"listing: {exc!r}")
         log.warning("%s: listing failed: %r", source.id, exc)
+        items = []
+    if not items and not result.frontpage:
         return result
     result.listed = len(items)
-    known = is_known([i.url for i in items])
-    todo = [i for i in items if i.url not in known][:max_per_source]
+    # Every new front-page article is fetched (the home page needs its title); the cap
+    # applies to feed items only.
+    front_urls = {i.url for i in result.frontpage}
+    known = is_known([i.url for i in result.frontpage + items])
+    todo = [i for i in result.frontpage if i.url not in known]
+    todo += [i for i in items if i.url not in known and i.url not in front_urls][:max_per_source]
     result.new = len(todo)
 
     for item in todo:
@@ -90,6 +111,7 @@ def ingest_source(
             resp = http.get(client, item.url)
             # Bytes, not resp.text: Chinese pages often declare their charset only in <meta>.
             text, page_date, page_title = extract(resp.content, item.url, REGION_TZ[source.region])
+            page_title = source.clean_title(page_title) if page_title else None
             status = "ok" if text else "empty"
         except Exception as exc:  # noqa: BLE001 — one bad page must not stop the source
             result.errors.append(f"{item.url}: {exc!r}")
@@ -98,7 +120,9 @@ def ingest_source(
             Article(
                 source_id=source.id,
                 url=item.url,
-                title=item.title or page_title or "",
+                # Homepage anchor text is a fallback (kickers, teasers); feed titles are clean.
+                title=(page_title if item.url in front_urls and page_title else None)
+                or item.title or page_title or "",
                 excerpt=item.excerpt,
                 content=text,
                 # Page metadata is more precise than URL dates and fixes UDN's 1970 feed dates.

@@ -12,7 +12,9 @@ import lxml.html
 from .models import ListingItem
 
 CST = timezone(timedelta(hours=8))  # Beijing / Taipei
-_TRACKING_PARAMS = re.compile(r"^(utm_|fbclid$|gclid$|cmpid$|ocid$|ref$|ftag$|ito$)", re.IGNORECASE)
+_TRACKING_PARAMS = re.compile(
+    r"^(utm_|fbclid$|gclid$|cmpid$|ocid$|ref$|ftag$|ito$|_?intcmp$|from$|form$)", re.IGNORECASE
+)
 
 
 def canonical_url(url: str) -> str:
@@ -148,6 +150,92 @@ def parse_udn(source_id: str, body: bytes, base_url: str) -> list[ListingItem]:
             )
         )
     return items
+
+
+_MONTHS = "jan feb mar apr may jun jul aug sep oct nov dec".split()
+_URL_DATES = [
+    # /2026-10-28/  /2026/10/28/  /2026/oct/28/  /20261028/  -20261028-  /2026/1028/  /2026/10-28/
+    re.compile(r"/(\d{4})-(\d{2})-(\d{2})/"),
+    re.compile(r"/(\d{4})/(\d{2})/(\d{2})/"),
+    re.compile(r"/(\d{4})/([a-z]{3})/(\d{2})/"),
+    re.compile(r"[/-](\d{4})(\d{2})(\d{2})[/-]"),
+    re.compile(r"/(\d{4})/(\d{2})(\d{2})/"),
+    re.compile(r"/(\d{4})/(\d{2})-(\d{2})/"),
+    re.compile(r"/(\d{4})(\d{2})(\d{2})\d{4}\.aspx$"),  # CNA: /202610280137.aspx
+]
+
+
+def url_date(url: str) -> datetime | None:
+    """Publication date encoded in an article URL, if any (local midnight, Beijing/Taipei zone
+    is close enough: it is only used to drop stale links)."""
+    for pattern in _URL_DATES:
+        m = pattern.search(url)
+        if not m:
+            continue
+        month = _MONTHS.index(m[2]) + 1 if m[2].isalpha() else int(m[2])
+        try:
+            return datetime(int(m[1]), month, int(m[3]), tzinfo=CST)
+        except ValueError:
+            continue
+    return None
+
+
+_TIME_TOKEN = re.compile(r"(?:^|\s)\d{1,2}:\d{2}(?:\s|$)")
+
+
+def _headline(text: str) -> str:
+    """Anchor text minus list decorations: a leading section and time ("政治13:44標題",
+    "14:17 標題"), a time followed by a teaser ("標題 14:08 摘要…"), reading-time suffixes
+    ("…2 min read") and comment-count links ("…… comments")."""
+    if re.fullmatch(r"[\W\d]*comments?", text, re.IGNORECASE):
+        return ""
+    text = re.sub(r"^\D{0,6}?\d{1,2}:\d{2}\s*", "", text)
+    m = _TIME_TOKEN.search(text)
+    if m and m.start() > 0:
+        text = text[: m.start()]
+    return re.sub(r"\d+ min(ute)?s? read$", "", text).strip()
+
+
+def parse_frontpage(
+    source_id: str,
+    body: bytes,
+    base_url: str,
+    pattern: re.Pattern,
+    limit: int = 10,
+    max_age: timedelta = timedelta(days=3),
+    now: datetime | None = None,
+) -> list[ListingItem]:
+    """Headlines in the order the homepage shows them (DOM order = editorial prominence).
+
+    Rank is the position of a URL's first appearance. Links whose URL date is older than
+    `max_age` are dropped before ranking (pinned specials, stale blocks). A URL's headline is
+    its first anchor text of 6+ characters (image links have none; later ones are often
+    teasers). It is only a fallback: the UI prefers the article page's own title.
+    """
+    cutoff = (now or datetime.now(UTC)) - max_age
+    order: list[str] = []
+    titles: dict[str, str] = {}
+    for href, text in _anchors(body, base_url):
+        if not href.startswith("http"):
+            continue
+        url = canonical_url(href)
+        if not pattern.match(url):
+            continue
+        headline = _headline(text)
+        if url not in titles:
+            order.append(url)
+            titles[url] = ""
+        if len(titles[url]) < 6 and len(headline) >= 6:
+            titles[url] = headline
+    items = []
+    for url in order:
+        published = url_date(url)
+        if published and published < cutoff:
+            continue
+        if not titles[url]:
+            continue
+        items.append(ListingItem(source_id, url, titles[url], published_at=published))
+    return items[:limit]
 
 
 PARSERS = {

@@ -10,6 +10,9 @@ the same event. Phases and status are in README.md.
   (trafilatura + per-site body extractors), `pipeline.py` (orchestration), `http.py`.
 - `src/news_summarizer/db.py` + `migrations/NNNN_*.sql` — plain SQL migrations, psycopg 3.
 - `src/news_summarizer/cli.py` — `ans migrate`, `ans ingest [--dry-run]`.
+- `web/` — Next.js 16 app (read `web/AGENTS.md`: this Next.js version has breaking changes;
+  check `web/node_modules/next/dist/docs/` before writing Next code) and the read-only FastAPI
+  function `web/api/index.py`. Run `npm run lint` and `npx tsc --noEmit` in `web/`.
 
 ## Rules
 

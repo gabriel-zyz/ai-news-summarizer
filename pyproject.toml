@@ -19,7 +19,13 @@ dependencies = [
 ans = "news_summarizer.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = [
+    "fastapi==0.115.12",
+    "httpx>=0.28.1",
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "uvicorn>=0.54.0",
+]
 
 [build-system]
 requires = ["hatchling"]

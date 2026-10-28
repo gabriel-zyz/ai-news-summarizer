@@ -1,16 +1,22 @@
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from news_summarizer.ingest.extract import extract
 from news_summarizer.ingest.listings import (
     CST,
+    _headline,
     canonical_url,
     parse_cctv,
+    parse_frontpage,
     parse_people,
     parse_rss,
     parse_udn,
     parse_xinhua,
+    url_date,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -87,3 +93,49 @@ def test_cctv_body_comes_from_js_string():
     text, _, _ = extract(html, "https://news.cctv.com/2026/10/26/ARTIk9vk4llHis2NeHKjUPgf261026.shtml",
                          ZoneInfo("Asia/Shanghai"))
     assert text.startswith("央视网消息：10月26日，国家能源局发布1—9月份全国电力统计数据。")
+
+
+FRONT = b"""<html><body>
+  <a href="https://news.test/2026/10/28/lead-story">2 comments</a>
+  <a href="https://news.test/2026/10/28/lead-story"><img src="x.jpg"></a>
+  <a href="https://news.test/2026/10/28/lead-story?utm_source=home">Lead story headline</a>
+  <a href="https://news.test/2026/09/04/pinned-special">Pinned special from September</a>
+  <a href="https://news.test/about">About us</a>
+  <a href="https://news.test/2026/10/28/second">14:17 Second story</a>
+  <a href="https://news.test/2026/10/28/third">Third story 14:08 teaser text</a>
+  <a href="https://news.test/2026/10/28/lead-story">Lead story headline with a longer teaser</a>
+</body></html>"""
+
+
+def test_frontpage_keeps_homepage_order_and_drops_stale_links():
+    now = datetime(2026, 10, 28, 12, tzinfo=UTC)
+    items = parse_frontpage(
+        "s", FRONT, "https://news.test/", re.compile(r"^https://news\.test/\d{4}/"), now=now
+    )
+    assert [(i.url.rsplit("/", 1)[1], i.title) for i in items] == [
+        ("lead-story", "Lead story headline"),
+        ("second", "Second story"),
+        ("third", "Third story"),
+    ]
+    assert parse_frontpage("s", FRONT, "https://news.test/", re.compile("^https://"), limit=1,
+                           now=now)[0].title == "Lead story headline"
+
+
+@pytest.mark.parametrize(
+    ("url", "day"),
+    [
+        ("https://www.abc.net.au/news/2026-10-28/inflation/107317382", 28),
+        ("https://www.theguardian.com/world/2026/oct/27/israel-election", 27),
+        ("https://www.smh.com.au/politics/nsw/a-fantasy-20261026-p61abc.html", 26),
+        ("http://politics.people.com.cn/n1/2026/1025/c1024-40806006.html", 25),
+        ("https://www.chinanews.com.cn/gn/2026/10-24/10721559.shtml", 24),
+        ("https://www.cna.com.tw/news/aipl/202610230137.aspx", 23),
+        ("https://7news.com.au/news/missing-grandmother-c-20871234", None),
+    ],
+)
+def test_url_date(url, day):
+    assert (url_date(url).day if url_date(url) else None) == day
+
+
+def test_headline_strips_section_and_time_prefix():
+    assert _headline("政治13:44參選人身分證字號全都露？") == "參選人身分證字號全都露？"

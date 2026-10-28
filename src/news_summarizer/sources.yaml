@@ -1,5 +1,7 @@
 # MVP sources: 4 regions x 4 outlets, Chinese and English only.
 # kind: rss (one or more feeds) | xinhua | people | cctv | udn (custom parsers in ingest/listings.py)
+# frontpage: the homepage and the URL shape of its article links; headline order is taken
+# from the page (see listings.parse_frontpage). Patterns checked against live pages 2026-10-28.
 # Feeds tested 2026-10-25/26. news.com.au blocks crawlers; 7News (Seven West Media) replaces it.
 # The Age was rejected: same owner as SMH (Nine) and largely the same articles.
 
@@ -9,6 +11,9 @@
   language: en
   kind: rss
   feeds: [https://www.abc.net.au/news/feed/51120/rss.xml]
+  frontpage:
+    url: https://www.abc.net.au/news
+    pattern: '^https://www\.abc\.net\.au/news/\d{4}-\d{2}-\d{2}/[^/]+/\d+$'
 
 - id: guardian-au
   name: The Guardian Australia
@@ -16,6 +21,9 @@
   language: en
   kind: rss
   feeds: [https://www.theguardian.com/australia-news/rss]
+  frontpage:
+    url: https://www.theguardian.com/au
+    pattern: '^https://www\.theguardian\.com/[a-z0-9/-]+/\d{4}/[a-z]{3}/\d{2}/[a-z0-9-]+$'
 
 - id: smh
   name: Sydney Morning Herald
@@ -23,6 +31,9 @@
   language: en
   kind: rss
   feeds: [https://www.smh.com.au/rss/feed.xml]
+  frontpage:
+    url: https://www.smh.com.au/
+    pattern: '^https://www\.smh\.com\.au/.+-\d{8}-p[0-9a-z]+\.html$'
 
 - id: 7news
   name: 7News
@@ -30,6 +41,9 @@
   language: en
   kind: rss
   feeds: [https://7news.com.au/feed]
+  frontpage:
+    url: https://7news.com.au/
+    pattern: '^https://7news\.com\.au/.+-c-\d+$'
 
 - id: npr
   name: NPR
@@ -37,6 +51,9 @@
   language: en
   kind: rss
   feeds: [https://feeds.npr.org/1001/rss.xml]
+  frontpage:
+    url: https://www.npr.org/
+    pattern: '^https://www\.npr\.org/\d{4}/\d{2}/\d{2}/[a-z0-9-]+(/[a-z0-9-]+)?$'
 
 - id: cbs
   name: CBS News
@@ -44,6 +61,9 @@
   language: en
   kind: rss
   feeds: [https://www.cbsnews.com/latest/rss/main]
+  frontpage:
+    url: https://www.cbsnews.com/
+    pattern: '^https://www\.cbsnews\.com/(news|live-updates)/[a-z0-9-]+/?$'
 
 - id: nbc
   name: NBC News
@@ -51,6 +71,9 @@
   language: en
   kind: rss
   feeds: [https://feeds.nbcnews.com/nbcnews/public/news]
+  frontpage:
+    url: https://www.nbcnews.com/
+    pattern: '^https://www\.nbcnews\.com/(?!.*listen-live).+-rcna\d+$'
 
 - id: fox
   name: Fox News
@@ -58,6 +81,9 @@
   language: en
   kind: rss
   feeds: [https://moxie.foxnews.com/google-publisher/latest.xml]
+  frontpage:
+    url: https://www.foxnews.com/
+    pattern: '^https://www\.foxnews\.com/(politics|world|us|media|entertainment|sports|health|science|lifestyle|opinion|tech|travel|food-drink|live-news|economy)/[a-z0-9-]+$'
 
 - id: xinhua
   name: 新华网 Xinhua
@@ -65,6 +91,9 @@
   language: zh
   kind: xinhua
   feeds: [https://www.news.cn/]
+  frontpage:
+    url: https://www.news.cn/
+    pattern: '^https?://[a-z]+\.news\.cn/([a-z0-9/]+/)?\d{8}/[0-9a-f]{32}/c\.html$'
 
 - id: people
   name: 人民网 People's Daily
@@ -72,6 +101,11 @@
   language: zh
   kind: people
   feeds: [http://www.people.com.cn/]
+  # Page titles end with the site name; stripped before display.
+  title_strip: '\s*--.*人民网$'
+  frontpage:
+    url: http://www.people.com.cn/
+    pattern: '^https?://[a-z]+\.people\.com\.cn/n1/\d{4}/\d{4}/c\d+-\d+\.html$'
 
 - id: cctv
   name: 央视新闻 CCTV
@@ -79,6 +113,9 @@
   language: zh
   kind: cctv
   feeds: [https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp]
+  frontpage:
+    url: https://news.cctv.com/
+    pattern: '^https://[a-z]+\.cctv\.com/\d{4}/\d{2}/\d{2}/(ARTI|VIDE)\w+\.shtml$'
 
 - id: chinanews
   name: 中新网 Chinanews
@@ -86,6 +123,9 @@
   language: zh
   kind: rss
   feeds: [https://www.chinanews.com.cn/rss/scroll-news.xml]
+  frontpage:
+    url: https://www.chinanews.com.cn/
+    pattern: '^https://www\.chinanews\.com\.cn/[a-z0-9/]+/\d{4}/\d{2}-\d{2}/(news)?\d+\.shtml$'
 
 - id: cna
   name: 中央社 CNA
@@ -96,6 +136,11 @@
     - https://feeds.feedburner.com/rsscna/politics
     - https://feeds.feedburner.com/rsscna/mainland
     - https://feeds.feedburner.com/rsscna/intworld
+  # Page titles end with the site name; stripped before display.
+  title_strip: '(\s*\|[^|]*)*\s*\|\s*中央社 CNA$'
+  frontpage:
+    url: https://www.cna.com.tw/
+    pattern: '^https://www\.cna\.com\.tw/news/[a-z]+/\d{12}\.aspx$'
 
 - id: ltn
   name: 自由時報 Liberty Times
@@ -103,6 +148,11 @@
   language: zh
   kind: rss
   feeds: [https://news.ltn.com.tw/rss/all.xml]
+  # Page titles end with the site name; stripped before display.
+  title_strip: '(\s+-\s+[^-]*)*\s+-\s+自由\S*$'
+  frontpage:
+    url: https://news.ltn.com.tw/
+    pattern: '^https://[a-z]+\.ltn\.com\.tw/(news/[a-z]+/|article/|news/)?breakingnews/\d+$'
 
 - id: udn
   name: 聯合報 UDN
@@ -113,6 +163,11 @@
   feeds:
     - "https://udn.com/api/more?page=1&id=&channelId=1&cate_id=0&type=breaknews&totalRecNo=0"
     - "https://udn.com/api/more?page=2&id=&channelId=1&cate_id=0&type=breaknews&totalRecNo=0"
+  # Page titles end with the site name; stripped before display.
+  title_strip: '\s*\|\s*聯合新聞網$'
+  frontpage:
+    url: https://udn.com/news/index
+    pattern: '^https://udn\.com/news/story/\d+/\d+$'
 
 - id: ettoday
   name: ETtoday
@@ -120,3 +175,8 @@
   language: zh
   kind: rss
   feeds: [https://feeds.feedburner.com/ettoday/news]
+  # Page titles end with the site name; stripped before display.
+  title_strip: '(\s*\|[^|]*)*\s*\|\s*ETtoday新聞雲$'
+  frontpage:
+    url: https://www.ettoday.net/
+    pattern: '^https://[a-z]+\.ettoday\.net/news/(\d{8}/)?\d+(\.htm)?$'

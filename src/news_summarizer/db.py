@@ -5,7 +5,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 
-from .ingest.models import Article, Source
+from .ingest.models import Article, ListingItem, Source
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
 
@@ -70,6 +70,24 @@ def finish_run(conn: psycopg.Connection, run_id: int, status: str, stats: dict) 
         (status, Jsonb(stats), run_id),
     )
     conn.commit()
+
+
+def insert_frontpage(
+    conn: psycopg.Connection, run_id: int, source_id: str, items: list[ListingItem]
+) -> None:
+    if not items:
+        return
+    with conn.transaction():
+        snapshot_id = conn.execute(
+            "INSERT INTO frontpage_snapshots (source_id, run_id) VALUES (%s, %s) RETURNING id",
+            (source_id, run_id),
+        ).fetchone()[0]
+        with conn.cursor() as cur:
+            cur.executemany(
+                "INSERT INTO frontpage_items (snapshot_id, rank, url, title)"
+                " VALUES (%s, %s, %s, %s)",
+                [(snapshot_id, rank, i.url, i.title) for rank, i in enumerate(items, start=1)],
+            )
 
 
 def content_hash(text: str | None) -> str | None:
