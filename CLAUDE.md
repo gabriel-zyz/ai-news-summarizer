@@ -12,7 +12,7 @@ the same event. Phases and status are in README.md.
 - `src/news_summarizer/cli.py` — `ans migrate`, `ans ingest [--dry-run]`.
 - `web/` — Next.js 16 app (read `web/AGENTS.md`: this Next.js version has breaking changes;
   check `web/node_modules/next/dist/docs/` before writing Next code) and the read-only FastAPI
-  function `web/api/index.py`. Run `npm run lint` and `npx tsc --noEmit` in `web/`.
+  function `web/api/index.py`. Run `npm run lint`, `npm run build`, then `npx tsc --noEmit` in `web/` (the build generates route types).
 
 ## Rules
 
